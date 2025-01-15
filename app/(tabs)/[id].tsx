@@ -17,17 +17,26 @@ export default function ChatScreen() {
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
+    useMessageStore.getState().clearState();
     loadMessages(chatId);
+
     return () => {
       useMessageStore.getState().clearState();
     };
   }, [chatId]);
 
   const handleSend = async () => {
-    if (!message.trim()) return;
-    await sendMessage(chatId, message.trim());
+    if (!message.trim() || isLoading) return;
+    
+    const content = message.trim();
     setMessage('');
     inputRef.current?.clear();
+    
+    try {
+      await sendMessage(chatId, content);
+    } catch (error) {
+      console.error('Send error in UI:', error);
+    }
   };
 
   const handleUpload = async () => {
@@ -61,17 +70,39 @@ export default function ChatScreen() {
     }
   };
 
-  const renderMessage = ({ item }: { item: Message }) => (
-    <ThemedView style={[
-      styles.messageContainer,
-      item.is_sent_by_bot ? styles.botMessage : styles.userMessage
-    ]}>
-      <ThemedText style={styles.messageText}>{item.content}</ThemedText>
-      <ThemedText style={styles.messageTime}>
-        {new Date(item.created_at).toLocaleTimeString()}
-      </ThemedText>
-    </ThemedView>
-  );
+  const renderMessage = ({ item }: { item: Message }) => {
+    if (!item || typeof item.id === 'undefined') {
+      console.log('Invalid message:', item);
+      return null;
+    }
+
+    const getTimeString = (dateStr: string) => {
+      try {
+        const date = new Date(dateStr);
+        return date.toLocaleTimeString('ru-RU', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      } catch (e) {
+        console.error('Date parsing error:', e);
+        return '';
+      }
+    };
+
+    return (
+      <ThemedView style={[
+        styles.messageContainer,
+        item.is_sent_by_bot ? styles.botMessage : styles.userMessage
+      ]}>
+        <ThemedText style={styles.messageText}>
+          {typeof item.content === 'string' ? item.content : ''}
+        </ThemedText>
+        <ThemedText style={styles.messageTime}>
+          {item.created_at ? getTimeString(item.created_at) : ''}
+        </ThemedText>
+      </ThemedView>
+    );
+  };
 
   if (error) {
     return (
@@ -111,7 +142,13 @@ export default function ChatScreen() {
       <FlatList
         data={messages}
         renderItem={renderMessage}
-        keyExtractor={item => item.id.toString()}
+        keyExtractor={(item) => {
+          if (!item || typeof item.id === 'undefined') {
+            console.warn('Invalid message in keyExtractor:', item);
+            return Math.random().toString();  // fallback для невалидных сообщений
+          }
+          return item.id.toString();
+        }}
         contentContainerStyle={styles.listContent}
         inverted={false}
         onEndReached={() => {
@@ -164,6 +201,8 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
+    flexGrow: 1,
+    justifyContent: 'flex-end',
   },
   messageContainer: {
     maxWidth: '80%',

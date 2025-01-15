@@ -34,13 +34,15 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       const response = await messageApi.getMessages(chatId, offset, get().limit);
       set({
         messages: offset === 0 
-          ? response.items 
-          : [...response.items, ...get().messages],
+          ? [...response.items].reverse() 
+          : [...get().messages, ...response.items],
         total: response.total,
         offset: offset + get().limit,
-        isLoading: false
+        isLoading: false,
+        error: null
       });
     } catch (error) {
+      console.error('Load messages error:', error);
       set({ error: 'Ошибка загрузки сообщений', isLoading: false });
     }
   },
@@ -48,12 +50,25 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   sendMessage: async (chatId: number, content: string) => {
     set({ isLoading: true, error: null });
     try {
-      const message = await messageApi.sendMessage(chatId, content);
+      const userMessage: Message = {
+        id: Date.now(),
+        chat_id: chatId,
+        content: content,
+        created_at: new Date().toISOString(),
+        is_sent_by_bot: false
+      };
+      
       set(state => ({
-        messages: [...state.messages, message],
+        messages: [...state.messages, userMessage],
         isTyping: true,
-        isLoading: false
+        isLoading: false,
+        error: null
       }));
+
+      const message = await messageApi.sendMessage(chatId, content);
+      
+      set({ isTyping: true });
+
       const response = await messageApi.getMessages(chatId, 0, 1);
       if (response.items.length > 0) {
         set(state => ({
@@ -61,8 +76,13 @@ export const useMessageStore = create<MessageState>((set, get) => ({
           isTyping: false
         }));
       }
-    } catch (error) {
-      set({ error: 'Ошибка отправки сообщения', isLoading: false, isTyping: false });
+    } catch (error: any) {
+      console.error('Send message error:', error);
+      set({ 
+        error: error.response?.data?.detail || 'Error sending message', 
+        isLoading: false, 
+        isTyping: false 
+      });
     }
   },
 

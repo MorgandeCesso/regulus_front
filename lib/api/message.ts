@@ -1,5 +1,6 @@
 import { api } from './axios';
 import type { Message, PaginatedMessages, ChatFiles, UploadFileResponse } from '../types/message';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const messageApi = {
   getMessages: async (chatId: number, offset: number = 0, limit: number = 20): Promise<PaginatedMessages> => {
@@ -19,11 +20,27 @@ export const messageApi = {
   sendMessage: async (chatId: number, content: string): Promise<Message> => {
     console.log('Sending message:', { chatId, content });
     try {
-      const response = await api.post<Message>(`/chat/${chatId}/messages`, { content });
+      const token = await AsyncStorage.getItem('accessToken');
+      console.log('Current token:', token);
+      
+      const response = await api.post<Message>(`/chat/send_message`, {
+        chat_id: chatId,
+        content
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
       console.log('Message sent:', response.data);
       return response.data;
     } catch (error: any) {
-      console.error('Message send error:', error.response?.data);
+      console.error('Message send error:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.config?.headers,
+        method: error.config?.method
+      });
       throw error;
     }
   },
