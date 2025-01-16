@@ -12,6 +12,7 @@ interface ChatState {
   loadChats: (offset?: number) => Promise<void>;
   createChat: (title: string) => Promise<void>;
   deleteChat: (chatId: number) => Promise<void>;
+  resetContext: (chatId: number) => Promise<void>;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -59,6 +60,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
       }));
     } catch (error) {
       set({ error: 'Ошибка удаления чата', isLoading: false });
+    }
+  },
+
+  resetContext: async (chatId: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      await chatApi.resetContext(chatId);
+      // Можно добавить какое-то уведомление об успехе
+    } catch (error) {
+      set({ error: 'Ошибка сброса контекста', isLoading: false });
     }
   },
 })); 

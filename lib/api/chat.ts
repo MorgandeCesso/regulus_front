@@ -44,5 +44,17 @@ export const chatApi = {
       console.error('Chat deletion error:', error.response?.data);
       throw error;
     }
+  },
+
+  resetContext: async (chatId: number): Promise<StatusResponse> => {
+    console.log('Resetting chat context:', chatId);
+    try {
+      const response = await api.post<StatusResponse>(`/chat/${chatId}/reset_context`);
+      console.log('Context reset:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Context reset error:', error.response?.data);
+      throw error;
+    }
   }
 }; 

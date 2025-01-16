@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../lib/stores/auth';
 import { ThemedText } from '../../components/ThemedText';
@@ -13,8 +13,14 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
 
   const handleLogin = async () => {
-    console.log('Login attempt with:', { login: loginValue, password });
-    await login(loginValue, password);
+    try {
+      await login(loginValue, password);
+    } catch (error: any) {
+      Alert.alert(
+        'Ошибка входа',
+        error.message || 'Неверное имя пользователя или пароль'
+      );
+    }
   };
 
   return (
@@ -74,18 +80,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 32,
+    marginBottom: 24,
     textAlign: 'center',
     color: '#000',
   },
   input: {
-    height: 50,
+    height: 44,
     backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    marginBottom: 16,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginBottom: 12,
     fontSize: 16,
     color: '#000',
   },

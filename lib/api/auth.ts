@@ -24,12 +24,9 @@ export const authApi = {
       console.log('Login response:', response.data);
       return response.data;
     } catch (error: any) {
-      console.error('Login error details:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        headers: error.response?.headers,
-        config: error.config
-      });
+      if (error.response?.status === 401) {
+        throw new Error('Неверное имя пользователя или пароль');
+      }
       throw error;
     }
   },

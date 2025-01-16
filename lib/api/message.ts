@@ -64,12 +64,14 @@ export const messageApi = {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        timeout: 30000,
+        maxContentLength: 50 * 1024 * 1024,
       });
       console.log('Upload response:', response.data);
       return response.data;
     } catch (error: any) {
-      console.error('Upload error:', error.response?.data);
-      throw error;
+      console.error('Upload error:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || 'Ошибка загрузки файла');
     }
   }
 }; 

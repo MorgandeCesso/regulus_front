@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 
 const BASE_URL = 'http://10.0.2.2:8000';
 
@@ -31,7 +32,11 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Не пытаемся обновить токен, если это запрос на логин или рефреш
+    if (error.response?.status === 401 && 
+        !originalRequest._retry && 
+        !originalRequest.url.includes('/auth/token') &&  // добавляем проверку
+        !originalRequest.url.includes('/auth/refresh')) {
       originalRequest._retry = true;
       
       try {
@@ -48,7 +53,7 @@ api.interceptors.response.use(
       } catch (err) {
         // Редирект на логин если refresh token истек
         await AsyncStorage.multiRemove(['accessToken', 'refreshToken']);
-        // TODO: Добавить навигацию на экран логина
+        router.replace('/login');
         return Promise.reject(err);
       }
     }

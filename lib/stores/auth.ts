@@ -24,12 +24,12 @@ export const useAuthStore = create<AuthState>((set) => ({
         username: login,
         password 
       });
-      console.log('Login success, saving token:', response.access_token);
       await AsyncStorage.setItem('accessToken', response.access_token);
       set({ isLoading: false, user: { username: login } as User });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      set({ error: 'Ошибка входа', isLoading: false });
+      set({ isLoading: false });
+      throw error;
     }
   },
 
